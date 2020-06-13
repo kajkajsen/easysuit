@@ -1,0 +1,363 @@
+;
+; Newbie 100% lrc suit fabrik
+; (C) 2020 Kaj Kajsen
+;
+;
+
+set %sewingkittype HAG
+set %gorgettype JKH ;    4
+set %captype NJL ;       2
+set %glovestype KKH  ;   3
+set %sleevestype HKH  ;  4
+set %leggingstype VKH  ; 10
+set %tunictype QKH     ;  12
+
+; resource n numbers
+set %leathertotal 35
+set %ambertotal 48 ;     4*6
+set %reciduetotal 24 ;    8*6
+
+set %leathertype JJG ; normal leather
+set %ambertype RVF ; amber
+set %reciduetype TKR ;magical recidue
+set %bagtype CKF
+
+gosub setup
+for %i 1 10
+{
+gosub moveresources
+gosub craft_leather
+gosub imbue
+gosub movesuit
+msg suit %i done $
+}
+msg all suits done$
+
+halt
+
+sub movesuit
+    msg move crap$
+    finditem %bagtype C_ , %backpackid
+    wait 1s
+    if #findkind = -1
+    {
+       display storage bag not found :(
+       halt
+    }
+    set %bagid #FINDID
+    set #lobjectid %bagid
+    event macro 17 0 ; open resource bag.
+    wait 2s
+
+    gosub moveit %bagid %captype
+    gosub moveit %bagid %gorgettype
+    gosub moveit %bagid %glovestype
+    gosub moveit %bagid %sleevestype
+    gosub moveit %bagid %leggingstype
+    gosub moveit %bagid %tunictype
+    gosub moveit %storagebag %bagtype
+    return
+
+sub moveit
+    set %itam %2
+    set %dest %1
+    finditem %itam C_ , %backpackid
+    wait 1s
+    if #findcnt = 0
+    {
+    display armor part not found
+    wait 2s
+    halt
+    }
+    Exevent Drag #findid
+    wait 10
+    Exevent Dropc %dest
+    return
+
+; Imbue Item 29 70
+; Imbue Last Property 29 160
+; Cancel 29 290
+;
+
+sub imbue
+{
+; event macro 8 7 ; open backpack
+; wait 2s
+; set %backpackid #contid
+ event macro 13 56  ; open imbuing menu
+ gosub wait_gump
+ ; click imbue item
+ set %clickX #CONTPOSX + 29
+ set %clickY #CONTPOSY + 70
+ click %clickX %clickY f
+ ; a target cursor should appear
+ wait 1s
+ finditem %gorgettype C_ , %backpackid
+ wait 1s
+ if #findkind = -1
+ {
+  display itam not found halting...
+  halt
+ }
+  set #LTARGETID #findid
+  event macro 22 0 ; target itam.
+  gosub wait_gump
+  ; imbue menu appears
+  ; Casting 30 100
+  ; Lower reagent cost 264 101
+  set %clickX #CONTPOSX + 264
+  set %clickY #CONTPOSY + 101
+  click %clickX %clickY f
+  gosub wait_gump
+
+  ; Arrow Max  329 380
+  ; Arrow -1   230 380
+  ; Imbue Item 402 422
+
+  set %clickX #CONTPOSX + 329 ; click arrow max
+  set %clickY #CONTPOSY + 380
+  click %clickX %clickY f
+  gosub wait_gump
+
+  set %clickX #CONTPOSX + 230 ; click arrow -1
+  set %clickY #CONTPOSY + 380
+  click %clickX %clickY f
+  gosub wait_gump
+
+  set %clickX #CONTPOSX + 230 ; click arrow -1
+  set %clickY #CONTPOSY + 380
+  click %clickX %clickY f
+  gosub wait_gump
+
+  set %clickX #CONTPOSX + 230 ; click arrow -1
+  set %clickY #CONTPOSY + 380
+  click %clickX %clickY f
+  gosub wait_gump
+
+  set %clickX #CONTPOSX + 402 ; click Imbue Item
+  set %clickY #CONTPOSY + 422
+  click %clickX %clickY f
+  gosub wait_gump
+  ; done with gorget.. and 18 lrc set.
+
+  gosub imbue1 %captype
+  gosub imbue1 %glovestype
+  gosub imbue1 %sleevestype
+  gosub imbue1 %leggingstype
+  gosub imbue1 %tunictype
+
+ ; click cancel
+  set %clickX #CONTPOSX + 29
+  set %clickY #CONTPOSY + 290
+  click %clickX %clickY f
+  return
+}
+
+sub imbue1
+{
+  ; Imbue Last Property 29 160
+  set %clickX #CONTPOSX + 29 ; click Imbue Last Property
+  set %clickY #CONTPOSY + 160
+  click %clickX %clickY f
+  wait 1s
+  finditem %1 C_ , %backpackid
+  wait 1s
+  if #findkind = -1
+  {
+   display itam not found halting...
+   halt
+  }
+  set #LTARGETID #findid
+  event macro 22 0 ; target itam.
+  gosub wait_gump
+  return
+}
+
+sub setup
+{
+event macro 8 7 ; open backpack
+wait 2s
+set %backpackid #contid
+
+;
+set #targcurs 1
+msg Target Resource Bag$
+
+while #targcurs = 1
+    {
+    }
+set %resourcebag #ltargetid
+set #lobjectid %resourcebag
+event macro 17 0 ; open resource bag.
+wait 2s
+
+set #targcurs 1
+msg Target Storage Bag( Where u want the finished suit stored)$
+
+while #targcurs = 1
+    {
+    }
+set %storagebag #ltargetid
+set #lobjectid %storagebag
+event macro 17 0 ; open storage bag.
+wait 2s
+return
+
+}
+
+sub moveresources
+{
+    ; move leather
+    finditem %leathertype C_ , %resourcebag
+    wait 1s
+    if ( #findcnt = -1 || #findstack < %leathertotal )
+    {
+    display need leather bro %leathertotal
+    wait 2s
+    halt
+
+    }
+    Exevent Drag #findid %leathertotal
+    wait 10
+    Exevent Dropc %backpackid
+    wait 1s
+
+
+    finditem %ambertype C_ , %resourcebag
+    wait 1s
+    if ( #findcnt = -1 || #findstack < %ambertotal )
+    {
+    display need amber bro %ambertotal
+    wait 2s
+    halt
+
+    }
+    Exevent Drag #findid %ambertotal
+    wait 10
+    Exevent Dropc %backpackid
+    wait 1s
+
+    finditem %reciduetype C_ , %resourcebag
+    wait 1s
+    if ( #findcnt = -1 || #findstack < %reciduetotal )
+    {
+    display need amber bro %reciduetotal
+    wait 2s
+    halt
+
+    }
+    Exevent Drag #findid %reciduetotal
+    wait 20
+    Exevent Dropc %backpackid
+    wait 1s
+
+    ; drag a bag
+    finditem %bagtype C_ , %resourcebag
+    wait 1s
+    if  #findcnt = -1
+    {
+     display need a bag
+     wait 2s
+     halt
+
+     }
+     Exevent Drag #findid
+     wait 20
+     Exevent Dropc %backpackid
+     wait 1s
+
+return
+}
+
+sub craft_leather
+{
+ set %sewingmachine UIGC
+
+ finditem %sewingmachine G_2
+ if #findcnt <> 1
+    {
+        display Missing sewingmachine !!!
+        halt
+    }
+ set #lobjectid #findid
+ event macro 17 0 ; last object
+
+
+; Exit 35 454
+
+; Leather type selector X 28 Y 373
+; Leather 230 72
+; Spined  230 92
+; Horned  230 112
+; Barbed  230 132
+
+; Leather gorget   235 132
+; Leather cap      235 152
+; Leather gloves   235 172
+; Leather sleeves  235 192
+; Leather leggings 235 212
+; Leather Tunic    235 232
+;
+ wait 1s
+;click 35 454 f
+; Click leather Type
+
+ set %clickX #CONTPOSX + 28
+ set %clickY #CONTPOSY + 373
+ click %clickX %clickY f
+
+ wait 1s
+; Click Normal leather
+
+ set %clickX #CONTPOSX + 230
+ set %clickY #CONTPOSY + 72
+ click %clickX %clickY f
+ wait 1s
+
+; Craft various pieces
+ set %clickX #CONTPOSX + 235
+ set %clickY #CONTPOSY + 132
+ click %clickX %clickY f
+ gosub wait_gump
+
+ set %clickX #CONTPOSX + 235
+ set %clickY #CONTPOSY + 152
+ click %clickX %clickY f
+ gosub wait_gump
+
+ set %clickX #CONTPOSX + 235
+ set %clickY #CONTPOSY + 172
+ click %clickX %clickY f
+ gosub wait_gump
+
+ set %clickX #CONTPOSX + 235
+ set %clickY #CONTPOSY + 192
+ click %clickX %clickY f
+ gosub wait_gump
+
+ set %clickX #CONTPOSX + 235
+ set %clickY #CONTPOSY + 212
+ click %clickX %clickY f
+ gosub wait_gump
+
+ set %clickX #CONTPOSX + 235
+ set %clickY #CONTPOSY + 232
+ click %clickX %clickY f
+ gosub wait_gump
+
+;click Exit
+ set %clickX #CONTPOSX + 35
+ set %clickY #CONTPOSY + 454
+ click %clickX %clickY f
+
+ return
+}
+
+sub wait_gump
+{
+ while #contname <> generic_gump ; wait for gump to open ?
+ {
+ }
+return
+}
+
